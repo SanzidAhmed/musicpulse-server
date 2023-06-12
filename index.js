@@ -33,11 +33,32 @@ async function run() {
     await client.connect();
 
     const userCollection = client.db("MusicPulseDB").collection("userCollection");
+    const classCollection = client.db("MusicPulseDB").collection("classesCollection");
+    const cartCollection = client.db("MusicPulseDB").collection("cartsCollection");
 
     app.post('/users', async (req, res) => {
         const user = req.body;
         const result = await userCollection.insertOne(user);
         res.send(result);
+    })
+    app.get('/classes', async (req, res) => {
+        const result = await classCollection.find().toArray();
+        res.send(result)
+    })
+    // cart collection
+    app.get('/carts', async (req, res) => {
+      const email = req.query.email;
+      if(!email) {
+        return res.send([]);
+      }
+      const query = {email: email}
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.post('/carts', async (req, res) => {
+      const item = req.body;
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
     })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
