@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 require('dotenv').config();
 const cors = require('cors');
@@ -36,11 +36,45 @@ async function run() {
     const classCollection = client.db("MusicPulseDB").collection("classesCollection");
     const cartCollection = client.db("MusicPulseDB").collection("cartsCollection");
 
+
+    // user apis
+    app.get('/users', async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
     app.post('/users', async (req, res) => {
         const user = req.body;
+        const query = {email: user.email}
+        const existingUser = await userCollection.findOne(query);
+        if(existingUser) {
+          return res.send({message: "User already exists"})
+        }
         const result = await userCollection.insertOne(user);
         res.send(result);
     })
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateDoc = {
+        $set: {
+          role: 'admin'
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+    app.patch('/users/instructor/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateDoc = {
+        $set: {
+          role: 'instructor'
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+    // class apis
     app.get('/classes', async (req, res) => {
         const result = await classCollection.find().toArray();
         res.send(result)
@@ -59,6 +93,12 @@ async function run() {
       const item = req.body;
       const result = await cartCollection.insertOne(item);
       res.send(result);
+    })
+    app.delete('/carts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result)
     })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
