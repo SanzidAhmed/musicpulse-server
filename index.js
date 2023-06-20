@@ -171,6 +171,27 @@ async function run() {
       res.send(result);
     })
     // payment collection
+
+    app.get('/allpaymenthistory', async (req, res) => {
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/paymentshistory', verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        return res.send([]);
+      }
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(401).send({ error: true, message: 'forbidden access' });
+      }
+      const query = { email: email }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
     app.post('/payments', verifyJWT, async (req, res) => {
       const payment = req.body;
       const result = await paymentCollection.insertOne(payment);
